@@ -1,0 +1,212 @@
+* Self-driving taxi meter front-end SPICE netlist (taximeter_frontend_autodrive.cir)
+* This netlist simulates an Arduino-like driver that multiplexes a 4-digit 7-seg display
+* and a pulse input. It is "self-driving" so it does not require Arduino VSM to visualize
+* multiplex and segment behavior. It shows the digits "12.34" as an example.
+*
+* Multiplex timing:
+*  - Total multiplex period Tmux = 8ms
+*  - Each digit slot = 2ms (digit1: 0..2ms, digit2:2..4ms, digit3:4..6ms, digit4:6..8ms)
+*  - Repeats periodically
+*
+* How it works:
+*  - For each segment (A..G, DP) we create up to 4 PULSE sources (one per digit) that drive
+*    the segment node through steering diodes. Each PULSE is active only during its digit slot
+*    if that digit requires the segment. Segment node has a pull-down when not driven.
+*  - Digit control nodes (DIGn_CTRL) are PULSE sources that enable the digit sink transistor
+*    during its slot. The combination lights the intended segments for each digit during its slot.
+*
+* Note: This file is intended for demonstration and rapid verification in Multisim or other SPICE.
+
+VCC VCC 0 DC 5
+
+* Pulse source (simulated wheel pulses) -> node D2
+VPULSE D2 0 PULSE(0 5 0 1u 1u 500m 1000m)
+
+* Parameters (in seconds)
+.param Tmux=8m
+.param slot=2m
+.param tr=1u
+
+* Digit offsets (in seconds)
+.param td1=0
+.param td2={slot}
+.param td3={2*slot}
+.param td4={3*slot}
+
+* Pull-down for segment nodes
+RSEG_PULL_A SEG_A_OUT 0 100k
+RSEG_PULL_B SEG_B_OUT 0 100k
+RSEG_PULL_C SEG_C_OUT 0 100k
+RSEG_PULL_D SEG_D_OUT 0 100k
+RSEG_PULL_E SEG_E_OUT 0 100k
+RSEG_PULL_F SEG_F_OUT 0 100k
+RSEG_PULL_G SEG_G_OUT 0 100k
+RSEG_PULL_DP SEG_DP_OUT 0 100k
+
+* Steering diodes to OR multiple digit-driven pulses onto each segment node
+.model DIO D(Is=1e-14 N=2 Vfwd=0.7)
+
+* Digit control pulses (enable sinks) aligned with slots
+VDIG1 DIG1_CTRL 0 PULSE(0 5 {td1} {tr} {tr} {slot} {Tmux})
+VDIG2 DIG2_CTRL 0 PULSE(0 5 {td2} {tr} {tr} {slot} {Tmux})
+VDIG3 DIG3_CTRL 0 PULSE(0 5 {td3} {tr} {tr} {slot} {Tmux})
+VDIG4 DIG4_CTRL 0 PULSE(0 5 {td4} {tr} {tr} {slot} {Tmux})
+
+* Example displayed digits: "12.34" (left to right digits 1..4)
+* 7-seg patterns (a b c d e f g) for digits:
+* 1: 0 1 1 0 0 0 0  (segments B,C)
+* 2: 1 1 0 1 1 0 1  (A,B,G,E,D)
+* 3: 1 1 1 1 0 0 1  (A,B,C,D,G)
+* 4: 0 1 1 0 0 1 1  (B,C,F,G)
+
+* --- Segment A: active for digits 2 and 3 during their slots ---
+* Digit1 does not require A -> no source
+V_A_D2 A_DRV_D2 0 PULSE(0 5 {td2} {tr} {tr} {slot} {Tmux})
+D_A_D2 A_DRV_D2 SEG_A_OUT DIO
+V_A_D3 A_DRV_D3 0 PULSE(0 5 {td3} {tr} {tr} {slot} {Tmux})
+D_A_D3 A_DRV_D3 SEG_A_OUT DIO
+
+* --- Segment B: digits 1,2,3,4 all require B ---
+V_B_D1 B_DRV_D1 0 PULSE(0 5 {td1} {tr} {tr} {slot} {Tmux})
+D_B_D1 B_DRV_D1 SEG_B_OUT DIO
+V_B_D2 B_DRV_D2 0 PULSE(0 5 {td2} {tr} {tr} {slot} {Tmux})
+D_B_D2 B_DRV_D2 SEG_B_OUT DIO
+V_B_D3 B_DRV_D3 0 PULSE(0 5 {td3} {tr} {tr} {slot} {Tmux})
+D_B_D3 B_DRV_D3 SEG_B_OUT DIO
+V_B_D4 B_DRV_D4 0 PULSE(0 5 {td4} {tr} {tr} {slot} {Tmux})
+D_B_D4 B_DRV_D4 SEG_B_OUT DIO
+
+* --- Segment C: digits 1,3,4 require C ---
+V_C_D1 C_DRV_D1 0 PULSE(0 5 {td1} {tr} {tr} {slot} {Tmux})
+D_C_D1 C_DRV_D1 SEG_C_OUT DIO
+V_C_D3 C_DRV_D3 0 PULSE(0 5 {td3} {tr} {tr} {slot} {Tmux})
+D_C_D3 C_DRV_D3 SEG_C_OUT DIO
+V_C_D4 C_DRV_D4 0 PULSE(0 5 {td4} {tr} {tr} {slot} {Tmux})
+D_C_D4 C_DRV_D4 SEG_C_OUT DIO
+
+* --- Segment D: digits 2 and 3 require D ---
+V_D_D2 D_DRV_D2 0 PULSE(0 5 {td2} {tr} {tr} {slot} {Tmux})
+D_D_D2 D_DRV_D2 SEG_D_OUT DIO
+V_D_D3 D_DRV_D3 0 PULSE(0 5 {td3} {tr} {tr} {slot} {Tmux})
+D_D_D3 D_DRV_D3 SEG_D_OUT DIO
+
+* --- Segment E: digit 2 requires E ---
+V_E_D2 E_DRV_D2 0 PULSE(0 5 {td2} {tr} {tr} {slot} {Tmux})
+D_E_D2 E_DRV_D2 SEG_E_OUT DIO
+
+* --- Segment F: digit 4 requires F ---
+V_F_D4 F_DRV_D4 0 PULSE(0 5 {td4} {tr} {tr} {slot} {Tmux})
+D_F_D4 F_DRV_D4 SEG_F_OUT DIO
+
+* --- Segment G: digits 2,3,4 require G ---
+V_G_D2 G_DRV_D2 0 PULSE(0 5 {td2} {tr} {tr} {slot} {Tmux})
+D_G_D2 G_DRV_D2 SEG_G_OUT DIO
+V_G_D3 G_DRV_D3 0 PULSE(0 5 {td3} {tr} {tr} {slot} {Tmux})
+D_G_D3 G_DRV_D3 SEG_G_OUT DIO
+V_G_D4 G_DRV_D4 0 PULSE(0 5 {td4} {tr} {tr} {slot} {Tmux})
+D_G_D4 G_DRV_D4 SEG_G_OUT DIO
+
+* --- Decimal point (DP): show between digit2 and digit3 -> enable during digit2 slot ---
+V_DP_D2 DP_DRV_D2 0 PULSE(0 5 {td2} {tr} {tr} {slot} {Tmux})
+D_DP_D2 DP_DRV_D2 SEG_DP_OUT DIO
+
+* Digit sink transistors (connect same as previous netlist)
+.model LEDD D(Is=1e-14 N=2 Vfwd=2.0)
+.model QNPN NPN(IS=1e-14 BF=100)
+
+R_A_D1 SEG_A_OUT A_D1 220
+D_A_D1 A_D1 DIG1_CATH LEDD
+R_B_D1 SEG_B_OUT B_D1 220
+D_B_D1 B_D1 DIG1_CATH LEDD
+R_C_D1 SEG_C_OUT C_D1 220
+D_C_D1 C_D1 DIG1_CATH LEDD
+R_D_D1 SEG_D_OUT D_D1 220
+D_D_D1 D_D1 DIG1_CATH LEDD
+R_E_D1 SEG_E_OUT E_D1 220
+D_E_D1 E_D1 DIG1_CATH LEDD
+R_F_D1 SEG_F_OUT F_D1 220
+D_F_D1 F_D1 DIG1_CATH LEDD
+R_G_D1 SEG_G_OUT G_D1 220
+D_G_D1 G_D1 DIG1_CATH LEDD
+R_DP_D1 SEG_DP_OUT DP_D1 220
+D_DP_D1 DP_D1 DIG1_CATH LEDD
+
+Q1 DIG1_CATH DIG1_B DIG1_E QNPN
+R_BASE_D1 DIG1_CTRL DIG1_B 4.7k
+DIG1_E 0 0
+
+* Digit2
+R_A_D2 SEG_A_OUT A_D2 220
+D_A_D2 A_D2 DIG2_CATH LEDD
+R_B_D2 SEG_B_OUT B_D2 220
+D_B_D2 B_D2 DIG2_CATH LEDD
+R_C_D2 SEG_C_OUT C_D2 220
+D_C_D2 C_D2 DIG2_CATH LEDD
+R_D_D2 SEG_D_OUT D_D2 220
+D_D_D2 D_D2 DIG2_CATH LEDD
+R_E_D2 SEG_E_OUT E_D2 220
+D_E_D2 E_D2 DIG2_CATH LEDD
+R_F_D2 SEG_F_OUT F_D2 220
+D_F_D2 F_D2 DIG2_CATH LEDD
+R_G_D2 SEG_G_OUT G_D2 220
+D_G_D2 G_D2 DIG2_CATH LEDD
+R_DP_D2 SEG_DP_OUT DP_D2 220
+D_DP_D2 DP_D2 DIG2_CATH LEDD
+
+Q2 DIG2_CATH DIG2_B DIG2_E QNPN
+R_BASE_D2 DIG2_CTRL DIG2_B 4.7k
+DIG2_E 0 0
+
+* Digit3
+R_A_D3 SEG_A_OUT A_D3 220
+D_A_D3 A_D3 DIG3_CATH LEDD
+R_B_D3 SEG_B_OUT B_D3 220
+D_B_D3 B_D3 DIG3_CATH LEDD
+R_C_D3 SEG_C_OUT C_D3 220
+D_C_D3 C_D3 DIG3_CATH LEDD
+R_D_D3 SEG_D_OUT D_D3 220
+D_D_D3 D_D3 DIG3_CATH LEDD
+R_E_D3 SEG_E_OUT E_D3 220
+D_E_D3 E_D3 DIG3_CATH LEDD
+R_F_D3 SEG_F_OUT F_D3 220
+D_F_D3 F_D3 DIG3_CATH LEDD
+R_G_D3 SEG_G_OUT G_D3 220
+D_G_D3 G_D3 DIG3_CATH LEDD
+R_DP_D3 SEG_DP_OUT DP_D3 220
+D_DP_D3 DP_D3 DIG3_CATH LEDD
+
+Q3 DIG3_CATH DIG3_B DIG3_E QNPN
+R_BASE_D3 DIG3_CTRL DIG3_B 4.7k
+DIG3_E 0 0
+
+* Digit4
+R_A_D4 SEG_A_OUT A_D4 220
+D_A_D4 A_D4 DIG4_CATH LEDD
+R_B_D4 SEG_B_OUT B_D4 220
+D_B_D4 B_D4 DIG4_CATH LEDD
+R_C_D4 SEG_C_OUT C_D4 220
+D_C_D4 C_D4 DIG4_CATH LEDD
+R_D_D4 SEG_D_OUT D_D4 220
+D_D_D4 D_D4 DIG4_CATH LEDD
+R_E_D4 SEG_E_OUT E_D4 220
+D_E_D4 E_D4 DIG4_CATH LEDD
+R_F_D4 SEG_F_OUT F_D4 220
+D_F_D4 F_D4 DIG4_CATH LEDD
+R_G_D4 SEG_G_OUT G_D4 220
+D_G_D4 G_D4 DIG4_CATH LEDD
+R_DP_D4 SEG_DP_OUT DP_D4 220
+D_DP_D4 DP_D4 DIG4_CATH LEDD
+
+Q4 DIG4_CATH DIG4_B DIG4_E QNPN
+R_BASE_D4 DIG4_CTRL DIG4_B 4.7k
+DIG4_E 0 0
+
+* Pull-downs for cathodes to ensure defined voltages when transistor off
+R_CATH1 DIG1_CATH 0 1Meg
+R_CATH2 DIG2_CATH 0 1Meg
+R_CATH3 DIG3_CATH 0 1Meg
+R_CATH4 DIG4_CATH 0 1Meg
+
+.tran 0.001 0.1 uic
+.options abstol=1e-9 reltol=1e-3
+.end

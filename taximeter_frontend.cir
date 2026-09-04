@@ -1,0 +1,137 @@
+* Taxi meter front-end SPICE netlist (taximeter_frontend.cir)
+* - Pulse source -> D2 (INT0)
+* - Segment outputs SEG_A..SEG_G, SEG_DP are placeholders (connect to Arduino segment IO or set DC=5 for manual test)
+* - Digit control DIG1_CTRL..DIG4_CTRL are placeholders (connect to Arduino digit-enable IO or toggle to 5V to enable digit)
+* - Common-cathode digits; transistor sinks cathode to GND when DIGn_CTRL goes HIGH
+* - Each segment modeled as LED (DLED) + series resistor 220R
+*
+* Usage:
+* - Import this netlist into Multisim (File -> Import -> SPICE Netlist) or load into other SPICE simulators.
+* - Connect SEG_* and DIG*_CTRL to Arduino VSM IO if available, or replace VSEG_/VDIG* sources with PULSE/DC to test.
+*
+*******************************************************
+VCC VCC 0 DC 5
+
+* Pulse source driving Arduino INT0 (node D2) -- edit PULSE() for different speed
+* Default: 1 Hz square wave (500ms on, 500ms off)
+VPULSE D2 0 PULSE(0 5 0 1u 1u 500m 1000m)
+
+* Placeholder segment outputs (connect these nodes to Arduino segment pins or set DC to 5 for static test)
+VSEG_A SEG_A_OUT 0 DC 0
+VSEG_B SEG_B_OUT 0 DC 0
+VSEG_C SEG_C_OUT 0 DC 0
+VSEG_D SEG_D_OUT 0 DC 0
+VSEG_E SEG_E_OUT 0 DC 0
+VSEG_F SEG_F_OUT 0 DC 0
+VSEG_G SEG_G_OUT 0 DC 0
+VSEG_DP SEG_DP_OUT 0 DC 0
+
+* Placeholder digit control outputs (connect to Arduino digit-enable pins)
+VDIG1 DIG1_CTRL 0 DC 0
+VDIG2 DIG2_CTRL 0 DC 0
+VDIG3 DIG3_CTRL 0 DC 0
+VDIG4 DIG4_CTRL 0 DC 0
+
+*******************************************************
+.model LEDD D(Is=1e-14 N=2 Vfwd=2.0)
+.model QNPN NPN(IS=1e-14 BF=100)
+
+* ------- DIGIT 1 -------
+R_A_D1 SEG_A_OUT A_D1 220
+D_A_D1 A_D1 DIG1_CATH LEDD
+R_B_D1 SEG_B_OUT B_D1 220
+D_B_D1 B_D1 DIG1_CATH LEDD
+R_C_D1 SEG_C_OUT C_D1 220
+D_C_D1 C_D1 DIG1_CATH LEDD
+R_D_D1 SEG_D_OUT D_D1 220
+D_D_D1 D_D1 DIG1_CATH LEDD
+R_E_D1 SEG_E_OUT E_D1 220
+D_E_D1 E_D1 DIG1_CATH LEDD
+R_F_D1 SEG_F_OUT F_D1 220
+D_F_D1 F_D1 DIG1_CATH LEDD
+R_G_D1 SEG_G_OUT G_D1 220
+D_G_D1 G_D1 DIG1_CATH LEDD
+R_DP_D1 SEG_DP_OUT DP_D1 220
+D_DP_D1 DP_D1 DIG1_CATH LEDD
+
+Q1 DIG1_CATH DIG1_B DIG1_E QNPN
+R_BASE_D1 DIG1_CTRL DIG1_B 4.7k
+DIG1_E 0 0
+
+* ------- DIGIT 2 -------
+R_A_D2 SEG_A_OUT A_D2 220
+D_A_D2 A_D2 DIG2_CATH LEDD
+R_B_D2 SEG_B_OUT B_D2 220
+D_B_D2 B_D2 DIG2_CATH LEDD
+R_C_D2 SEG_C_OUT C_D2 220
+D_C_D2 C_D2 DIG2_CATH LEDD
+R_D_D2 SEG_D_OUT D_D2 220
+D_D_D2 D_D2 DIG2_CATH LEDD
+R_E_D2 SEG_E_OUT E_D2 220
+D_E_D2 E_D2 DIG2_CATH LEDD
+R_F_D2 SEG_F_OUT F_D2 220
+D_F_D2 F_D2 DIG2_CATH LEDD
+R_G_D2 SEG_G_OUT G_D2 220
+D_G_D2 G_D2 DIG2_CATH LEDD
+R_DP_D2 SEG_DP_OUT DP_D2 220
+D_DP_D2 DP_D2 DIG2_CATH LEDD
+
+Q2 DIG2_CATH DIG2_B DIG2_E QNPN
+R_BASE_D2 DIG2_CTRL DIG2_B 4.7k
+DIG2_E 0 0
+
+* ------- DIGIT 3 -------
+R_A_D3 SEG_A_OUT A_D3 220
+D_A_D3 A_D3 DIG3_CATH LEDD
+R_B_D3 SEG_B_OUT B_D3 220
+D_B_D3 B_D3 DIG3_CATH LEDD
+R_C_D3 SEG_C_OUT C_D3 220
+D_C_D3 C_D3 DIG3_CATH LEDD
+R_D_D3 SEG_D_OUT D_D3 220
+D_D_D3 D_D3 DIG3_CATH LEDD
+R_E_D3 SEG_E_OUT E_D3 220
+D_E_D3 E_D3 DIG3_CATH LEDD
+R_F_D3 SEG_F_OUT F_D3 220
+D_F_D3 F_D3 DIG3_CATH LEDD
+R_G_D3 SEG_G_OUT G_D3 220
+D_G_D3 G_D3 DIG3_CATH LEDD
+R_DP_D3 SEG_DP_OUT DP_D3 220
+D_DP_D3 DP_D3 DIG3_CATH LEDD
+
+Q3 DIG3_CATH DIG3_B DIG3_E QNPN
+R_BASE_D3 DIG3_CTRL DIG3_B 4.7k
+DIG3_E 0 0
+
+* ------- DIGIT 4 -------
+R_A_D4 SEG_A_OUT A_D4 220
+D_A_D4 A_D4 DIG4_CATH LEDD
+R_B_D4 SEG_B_OUT B_D4 220
+D_B_D4 B_D4 DIG4_CATH LEDD
+R_C_D4 SEG_C_OUT C_D4 220
+D_C_D4 C_D4 DIG4_CATH LEDD
+R_D_D4 SEG_D_OUT D_D4 220
+D_D_D4 D_D4 DIG4_CATH LEDD
+R_E_D4 SEG_E_OUT E_D4 220
+D_E_D4 E_D4 DIG4_CATH LEDD
+R_F_D4 SEG_F_OUT F_D4 220
+D_F_D4 F_D4 DIG4_CATH LEDD
+R_G_D4 SEG_G_OUT G_D4 220
+D_G_D4 G_D4 DIG4_CATH LEDD
+R_DP_D4 SEG_DP_OUT DP_D4 220
+D_DP_D4 DP_D4 DIG4_CATH LEDD
+
+Q4 DIG4_CATH DIG4_B DIG4_E QNPN
+R_BASE_D4 DIG4_CTRL DIG4_B 4.7k
+DIG4_E 0 0
+
+* Buttons placeholders: nodes with DC pull-up (replace by switches to GND for manual press)
+VBTN_MODE BTN_MODE_NODE 0 DC 5
+VBTN_UP   BTN_UP_NODE   0 DC 5
+VBTN_DOWN BTN_DOWN_NODE 0 DC 5
+VBTN_START BTN_START_NODE 0 DC 5
+VBTN_RESET BTN_RESET_NODE 0 DC 5
+
+* Observers (probes): place probes at D2, SEG_A_OUT, DIG1_CATH, etc.
+.tran 0.01 2
+.options abstol=1e-9 reltol=1e-3
+.end
