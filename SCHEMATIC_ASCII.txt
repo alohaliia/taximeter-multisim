@@ -1,0 +1,30 @@
+ASCII schematic summary
+
+ PULSE SOURCE (square 0-5V) ----> [1k] ----> D2 (INT0)
+                              |
+                             100nF
+                              |
+                             GND
+
+ Segments:
+ D3 -- 220R -- A
+ D4 -- 220R -- B
+ D5 -- 220R -- C
+ D6 -- 220R -- D
+ D7 -- 220R -- E
+ D8 -- 220R -- F
+ D9 -- 220R -- G
+ D10 - 220R -- DP
+
+ Digit enables (NPN):
+ D11 -- 4.7k -- base 2N3904 -- collector -> common cathode DIG1 -- emitter GND
+ D12 -- 4.7k -- base 2N3904 -- collector -> DIG2
+ D13 -- 4.7k -- base 2N3904 -- collector -> DIG3
+ A0  -- 4.7k -- base 2N3904 -- collector -> DIG4
+
+ Buttons (momentary to GND):
+ A2 MODE
+ A3 UP
+ A4 DOWN
+ A5 START/STOP
+ A6 RESET
